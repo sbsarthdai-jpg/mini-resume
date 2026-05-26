@@ -1,0 +1,417 @@
+나는 웹디자이너이고 웹에이전시 지원용 디자인이력서를 사이트 형태로 만들려고 해
+mini_resume 이라는 프로젝트 디렉토리에서 아래의 내용대로 구현해줘
+Supabase MCP를 사용해서  portfolio폴더에 다른 프로젝트와 구별하여 데이터베이스를 구축하고,
+모든 개발이 완료되면 GitHub Pages로 최종 배포까지 진행해줘.
+GitHub Actions 워크플로우를 사용해서 자동 배포되도록 설정하고, 배포 완료 후 접속 가능한 URL을 안내해줘.
+url은 관리용과 게시용(제출용)으로 따로 추출해줘
+디자인 및 이미지는 폴더 asset부분과 클로드다지인에서 추출한 파일을 참고해줘
+
+[기획 및 디자인]
+
+1. 주제
+웹디자이너 지원용 포트폴리오 겸 디자인 이력서 사이트
+
+2. 목적
+-이력서를 사이트 형태로 구현하여 움직임을 넣어서 새로운 방식으로 지원하므로써 나의 정보 뿐만 아니라 감각 및 역량 보여주기
+-url형태로 이력서를 제출하여 보다 많은 사람들이 나의 이력서를 볼 수 있도록
+-단순히 이력서를 지원하고 끝나는 것이 아니라 이력서를 본 회사에서 댓글 등의 코멘트 작성 및 면접요청 등의 기능을 통하여
+  나의 포트폴리오 성장을 돕고 양방향적 소통이 가능하도록 함
+
+5. 컨셉
+핵심 키워드 - 빨강 / 사과 / 통통튐 
+디자인 방향 - 스크롤시 좌우로 이동하여 스토리라인을 보여주는 형태의 풀페이지 사이트로
+                         각 페이지별 이력서 내용을 담아냄
+
+6. 콘텐츠 내용(부분별 들어갈 내용 및 대략적인 배치)
+타이틀 : 디자인 이력서 타이틀 보여지는 부분 -> 제목 부분의 텍스트가 자동으로 움직임이 있도록(bobbing and floating animation)
+콘텐츠1 : 나의 이미지 및 간단한 이력사항 보여줄 페이지 -> 가운데 나의 이미지를 배치하고 카카오톡 같은 메신저 알림창이 뜨듯이 하나씩 보여주기 
+콘텐츠2 : About me 페이지 - 나의 프로젝트 참여 예시 이미지와 나의 강점 등을 보여줄 수 있는 페이지
+콘텐츠3 : QnA - 스스로 질문하고 답하여 나에 대한 부분을 더 보여줄 수 있도록
+: 가운데 입력창 - 이력서를 열람한 사람이 의견을 남기는 공간 -> 이미지,텍스트 업로드를 하면 회사별 코멘트를 같이 볼 수 있고 / 면접요청을 누르면 전화번호 / 이메일주소 복사하게
+콘텐츠4 : 코멘트 리스트 페이지 -> 여러 사람이 올려둔 질문 및 의견을 모아볼 수 있도록 하며 카드형태로 배치 (5*2)
+푸터 : contact me 부분 - 이력서를 본 다양한 사람들이 의견을 남길 수 있도록 하고 바로 이메일 쓰기, 연락하기 등이 가능하도록 함 / 푸터 부분에서 내용을 입력하면 4콘텐츠 부분에 카드형태로 뜨고 카드를 누르면 팝업창으로 더 자세한 내용을 보고
+답글 등을 달 수 있도록!
+
+5-1. 전체구성 정리
+
+00  Topbar     Motion Graphic / Design Resume / 날짜
+                   Lalezar 40 px · #BB1616
+                   ★ 양 끝 정렬이 Hi, I'M MINI! 와 동일한 X 라인을 따라야 함
+
+01  Hero        Hi, I'M MINI! (312 · Lalezar · 빨강)
+                   + 얼굴 이미지 (560×700) — 마우스 따라가는 Magnet
+                   + 사과 데코 2개 — 좌측 작은 + 우측 큰·잘림
+                   + Contact CTA (우측 하단)
+
+02  Profile      제목 Profile (140 · 검정)
+                   부제: 통통 튀고 상큼한 아이디어 생성기
+                   4-카드 그리드 — 사진 / 기본정보 / 수상·경력 / 스킬
+
+03  Marquee ↓    빨강 띠 · Lalezar 22 · 좌→우 무한 스크롤
+
+04  About Me    제목 About Me (140 · 빨강) · 부제 없음
+                      4개 sticky-stack 카드
+                      각 카드: 좌측 텍스트(번호+키워드+리드+본문+태그)
+                      + 우측 700×700 포트폴리오 이미지 슬롯
+
+05  Marquee ↑    동일 띠 · reverse 방향
+
+06  QnA         제목 QnA (140 · 검정) · 부제 없음
+                   6개 아코디언 (5px 보더, 열림 시 빨강 보더)
+
+07  Contact     빨강 풀블리드 (#BB1616)
+                   Contact Me (140 · 흰 #F8F8F8)
+                   입력 핀 (placeholder: "부족한점, 칭찬, 면접제의...")
+                   + 종이비행기 Send
+                   소셜 4링크 · 푸터
+
+6. 디자인가이드
+
+<컬러>
+주조색 (Primary)
+#BB1616   Red (Primary)
+-> 타이틀 제목, 포인트 컬러, 마퀴 바, 버튼, 게이지 바 fill,
+    프로필 카드 라벨, About Me 키워드 / 숫자, 첫 해시태그
+
+배경 (Background)
+#F6F2EA   Cream BG ->페이지 전체 배경 — 따뜻한 크림 베이스
+#FFFFFF   Paper -> 카드 배경, 입력 박스
+#F8F8F8   White Soft -> 빨강 배경 위의 흰 텍스트 (마퀴 / Contact 헤딩)
+
+텍스트 (Text)
+#111111   Ink Black     ↳ 검정 섹션 제목 (Profile / QnA), Send 버튼
+#333333   Body Ink      ↳ 본문 텍스트, About Me 리드 문장
+#444444   Body Soft     ↳ About Me 상세 본문
+#8B8378   Ink Soft      ↳ 서브 라벨, 시스템 메타 텍스트
+
+라인 (Border)
+rgba(51,51,51,0.12)     ↳ 카드 보더, 점선 디바이더 기본값
+
+<텍스트> 
+1) 폰트크기 및 굵기
+타이틀 페이지 제목 - 120px / reguler
+각 페이지별 제목 - 45px / reguler
+부제목 - 38px
+내용  - 22px
+
+2)폰트 패밀리
+-Display : Lalezar | Google Fonts · 400 Regular (단일 굵기)
+-Body :Roboto | Google Fonts · 400 / 500 / 600 / 700
+-Mono · Label : JetBrains Mono | Google Fonts · 400 / 500
+
+3)사이즈 스케일
+312 px  ▸  Hero Title (H0)
+              Lalezar · #BB1616 · line-height 0.92
+              실제 clamp(180px, 16.5vw, 360px) — 양 끝 정렬 (justify)
+              예) Hi, I'M MINI!
+
+140 px  ▸  Section Title (H1)
+              Lalezar · line-height 1
+              컬러는 섹션별로 다름:
+                Profile / QnA       → #111  (검정)
+                About Me            → #BB1616 (빨강)
+                Contact Me          → #F8F8F8 (흰)
+              예) About Me · Profile · QnA · Contact Me
+
+120 px  ▸  About Me Number (H1.5)
+              Lalezar · #BB1616 · line-height 0.9
+              예) 01  02  03  04
+
+40 px  ▸  Topbar (H2)
+              Lalezar · #BB1616 · line-height 1
+              예) Motion Graphic / Design Resume / 2025.05.05
+
+30 px  ▸  About Lead (H3)  &  Profile Card Label
+              Roboto · weight 700 (Bold)
+              About Lead     → #333  · line-height 1.3 · 따옴표 포함
+              Card Label     → #BB1616 (빨강)
+              예) "마감 앞에서 흔들리지 않아요."  /  Photo · Basic Info
+
+25 px  ▸  About Keyword (H4)  &  Section Subtitle
+              About Keyword  → Roboto 600 (Semibold) · #BB1616
+              Subtitle       → Roboto 500 (Medium)  · #333
+              예) 단단함 / 빠른 아이디어  ·  통통 튀고 상큼한 아이디어 생성기
+
+22 px  ▸  QnA Question (H5)  &  Marquee
+              QnA Question   → Roboto 600 · #111 · line-height 1.4
+              Marquee        → Lalezar    · #F8F8F8
+              예) 어떤 작업을 가장 좋아하나요?
+
+18 px  ▸  Body  (About 본문 / QnA 답변 / Contact 입력)
+              Roboto · weight 400~500
+              About body   → #444 · line-height 1.7
+              QnA answer   → #333 · line-height 1.6 · weight 500
+              Contact      → #333 · weight 400
+
+17 px  ▸  Profile Card 한글 제목
+              Roboto · weight 500 · #333
+
+15 px  ▸  Hero CTA Button
+              Roboto 700 · #fff · letter-spacing 0.16em · uppercase
+
+14 px  ▸  Tag / Pill (해시태그 / 소셜 링크)
+              Roboto 600 · #333
+
+12 / 11 px ▸  Mono Labels (이미지 캡션 등)
+              JetBrains Mono · letter-spacing 0.18em · #8B8378
+
+<간격 및 모서리>
+
+페이지 / 섹션
+max-width            1920 px (centered)
+section X padding    64 px       전체 좌우 인셋
+section Y padding    120 px      상하 여백
+hero min-height      1100 px
+
+카드 내부 패딩
+about-card           56 × 64 px  큰 sticky 카드
+profile-card         32 × 28 px  프로필 카드 (height 560px 고정)
+qna-q (header)       28 × 36 px  아코디언 헤더
+contact form         10 / 10 / 10 / 32 px
+
+그리드 & 갭
+profile grid         4 columns · gap 22 px
+about grid           1fr / 700 px · gap 60 px
+qna list             vertical · gap 16 px
+hashtag              gap 10 px
+marquee              gap 36 px (텍스트–도트)
+
+Border Radius
+profile card         28 px
+about card           32 px
+qna card             24 px
+image slot           24 px       (about 우측 700×700)
+photo placeholder    18 px
+pill (버튼/태그/인풋) 999 px
+
+Border
+default              1 px solid rgba(51,51,51,0.12)
+qna item             5 px
+qna item open        5 px solid #BB1616
+
+Shadow
+페이지 전체           none  (* { box-shadow: none } 적용)
+예외: hero photo만   filter: drop-shadow(0 30px 50px rgba(51,51,51,0.35))
+
+<컴포넌트>
+
+CTA Button (Contact Me)
+배경         #BB1616
+텍스트       #fff · Roboto 700 · 15 px
+스타일       uppercase · letter-spacing 0.16em
+패딩         20 × 36 px
+radius       999 (pill)
+Hover        transform: translateY(2px)
+
+Hashtag Pill
+크기         font-size 14 · padding 8 × 16 · radius 999
+굵기         Roboto 600
+첫 태그      bg #BB1616 / 텍스트 #fff
+나머지       bg #F6F2EA / 보더 1px line · 텍스트 #333
+
+Skill Gauge Bar
+바           height 8 · radius 4 · bg #EEE6D4 · fill #BB1616
+이름         min-width 100 · Roboto 600 · 13 · #111
+퍼센트       Lalezar 16 · #BB1616 · 우측 정렬
+
+QnA Plus / Close Toggle
+크기         48 × 48 원형
+Default      bg #F6F2EA · 검정 SVG 십자가 (2-line)
+Open         bg #BB1616 · 흰색 · transform: rotate(45deg) → X 형태
+Transition   transform 0.3s ease
+
+Contact Input (Pill Form)
+컨테이너     bg #fff · radius 999 · padding 10 10 10 32
+                 max-width 720
+입력         type=text · Roboto 18 · #333
+                 placeholder: "부족한점, 칭찬, 면접제의 어떤 내용이든 남겨주세요"
+Send 버튼    56 × 56 원형 · bg #111 · 흰 종이비행기 SVG
+Sending     plane: translate(70, -70) rotate(-25deg)
+Sent        overlay scale 0.6 → 1, "메일이 도착했어요! 곧 답장드릴게요 ✦"
+
+Marquee (무한 루프 띠)
+배경 / 색    bg #BB1616 · color #F8F8F8
+텍스트       Lalezar 22
+도트         12 × 12 원 · #F8F8F8
+갭           36 px
+애니메이션   transform translateX 0 → -50% · 28s linear infinite
+Direction    forward (위) / reverse (아래)
+
+Profile Card (4종 동일 규격)
+크기         height 560 px (전체 동일)
+배경         #FFFFFF
+radius       28 px
+Label        Roboto 700 · 30 · #BB1616
+H3           Roboto 500 · 17 · #333
+Hover        translateY(-4px)  · no shadow
+
+About Me Sticky Card (4종 동일 규격)
+배경         #FFFFFF · radius 32 · padding 56 × 64
+그리드       1fr / 700 px · gap 60
+좌측 min-h   700 px
+좌측 콘텐츠  Number(120 빨강) / Keyword(25 빨강 600) /
+                 Lead(30 700 검정 따옴표) / Body(18 #444) / Hashtags
+우측         700 × 700 이미지 슬롯 (radius 24)
+
+
+<인터렉션 및 애니메이션>
+
+FadeIn (스크롤 시 페이드인)
+trigger      viewport 진입 시
+duration     700 ms (기본 · 조정 가능)
+easing       cubic-bezier(0.25, 0.1, 0.25, 1)
+움직임       y +30 · opacity 0 → 1
+
+Magnet (Hero Photo · 마우스 따라가기)
+strength     3 (이동 거리 dx/3, dy/3)
+padding      140 px (자석 발동 거리)
+transition   in:  0.3 s ease-out
+             out: 0.6 s cubic-bezier(0.2, 0.7, 0.3, 1)
+
+Sticky Stack (About Me 카드)
+top          90 + index × 16 px (계단식 누적)
+scale        뒤로 갈수록 -0.03 씩 축소
+opacity      1 → 0.85 (progress 비례)
+listener     scroll (passive)
+
+QnA Accordion
+transition   grid-template-rows 0fr → 1fr
+duration     400 ms ease
+icon         + → × (rotate 45deg)
+동작         하나만 열림 (재클릭 시 close)
+
+Contact Submit
+sending      700 ms — paper plane fly out
+plane        translate(70, -70) rotate(-25deg)
+sent         2.5 s overlay — scale 0.6 → 1
+reset        3.2 s total — 자동 idle 복귀
+
+Marquee
+type         CSS animation (translateX 0 → -50%)
+duration     28 s · linear · infinite
+direction    forward / reverse
+seam         row 2개 복제로 자연 연결
+
+
+<파일 / 에셋>
+
+index.html          엔트리 (Lalezar / Roboto / JetBrains Mono 로드)
+styles.css          토큰 + 전체 스타일
+app.jsx             AppWrapper + Tweaks 패널 조립
+sections.jsx        Hero / Profile / About / QnA / Contact + 4종 Scene
+components.jsx      Magnet · FadeIn · ScrollFadeText · StickyCard · Marquee
+tweaks-panel.jsx    프로토타입 전용 (프로덕션 불필요)
+
+assets/face.png     MINI 얼굴 일러스트 (560 × 700 PNG · 투명)
+assets/apple.png    사과 데코 (좌 280 / 우 520 두 인스턴스로 사용)
+
+<사이즈>
+디자인가이드.html확인
+
+7. 참고사이트
+컬러 및 디자인가이드 - https://www.behance.net/gallery/210944049/portfolio-2025-graphic-designer?tracking_source=search_projects|portfolio&l=17
+
+8. 이미지 - 아이콘 및 이미지 폴더 참고
+
+9. 내용
+
+10. 레이아웃 참고
+레이아웃 폴더 참고
+※페이지별 레이아웃은 반드시 레이아웃 참고 폴더 확인하여 만들어줘
+
+[DB]
+
+1. 구현할 DB목록
+
+사용자용 url에서 구현
+1)코멘트 입력(푸터 contact에 입력창 누르면) 
+기능- 텍스트 입력 및 이미지 업로드 / 입력완료 버튼 / 페이지에 대한 설명 알림 (저에 대한 질문, 의견을 남겨주세요)/입력완료 후 소중한 의견 감사합니다 알림 띄우기
+내용 - 
+
+2)코멘트 결과 리스트 콘텐츠
+기능 - 입력한 질문 및 의견이 카드형태로 표시(5*2) / 이미지 업로드시 미리보기에서 이미지와 텍스트가 같이 보이도록 / 이미지가 없으면 텍스트만 보이도록 / 질문 및 코멘트 카드형태 미리보기 클릭시 그에 대한 답변을 달 수 있도록
+내용 - 
+
+3)코멘트 답변작성 팝업화면
+기능 - 코멘트 리스트를 누르면 보여지는 상세페이지로 클릭하여 들어가면 내용을 읽고 답변을 달 수 있도록 / 엑스 버튼을 눌러 닫기
+내용 -
+
+관리자용 url에서 구현
+1)각 페이지별 텍스트 내용 수정 페이지
+2)코멘트 내용 삭제기능
+3)코멘트 비공개 기능
+
+3. 핵심 목표(실현할 기능 중 우선적으로 구현해야 하는 순서정리)
+-코멘트 입력 후 콘텐츠에 띄워주는 기능
+-코멘트 카드 클릭시 뜨는 팝업창 및 답장기능
+-관리자 페이지에서 이미지 변경 및 내용수정 기능
+
+4. DB 구조 설계(예시 테이블)
+
+1)user테이블
+
+-id | UUID / INT | PK, Auto Increment |고유 유저 ID
+-email | VARCHAR | UNIQUE, NOT NULL | 이메일 (로그인용)
+-password | VARCHAR | NOT NULL | 암호화된 비밀번호
+-role | VARCHAR | DEFAULT 'user' | 권한 (admin, user 구분)
+-created_at | TIMESTAMP | DEFAULT NOW() | 계정 생성일
+
+2)comments테이블
+
+id | INT / UUID | PK, Auto Increment | 코멘트 고유 ID
+parent_id | INT / UUID | FK (Self-referencing), NULL 허용 | 답변용 필드: 원본 질문의 id를 가리킴 (질문글이면 NULL)
+author_name | VARCHAR | DEFAULT '익명' | 작성자 이름 (입력 안 하면 익명)
+content | TEXT | NOT NULL | 코멘트/답변 본문 내용
+image_url	 | VARCHAR | NULL 허용 | 업로드된 이미지 파일 경로/URL
+is_private	 | BOOLEAN | DEFAULT FALSE | 비공개 여부 (관리자 기능)
+is_deleted | BOOLEAN | DEFAULT FALSE | 삭제 여부 (실제 삭제 대신 soft-delete 권장)
+created_at | TIMESTAMP | DEFAULT NOW() | 작성일자
+
+3)pagecontents테이블(관리자용 url을 위한 테이블)
+
+-id | INT | PK, Auto Increment | 고유 ID | 1 / 2
+-page_name | VARCHAR | NOT NULL, UNIQUE | 페이지 구분 (e.g., 'home', 'about', 'project_1') | 'home', 'portfolio'
+-section_key | VARCHAR | NOT NULL | 페이지 내 구역 (e.g., 'hero_title', 'intro_text') | 'hero_title', 'profile_img'
+-content_text | TEXT | NULL 허용 | 수정할 텍스트 내용
+-content_type | VARCHAR | NOT NULL | 데이터의 종류 | 'text' (텍스트용) 또는 'image' (이미지 URL용)
+-content_value | TEXT | NULL 허용 | 실제 내용 (텍스트 또는 이미지 URL) | '안녕하세요, 디자이너 홍길동입니다.' / 'https://.../banner.png'
+-image_url | VARCHAR | NULL 허용 | 수정할 이미지 URL (메인 배너 등)
+-updated_at | TIMESTAMP | DEFAULT NOW() | 최종 수정일자 | 2026-05-26 ...
+
+5. DB설계 주의사항
+1) 코멘트 답변 기능 (parent_id 활용법)
+사용자가 질문을 남기면 parent_id는 NULL 상태로 저장
+관리자가 팝업창에서 답변을 작성하면, 새로운 행(Row)이 추가되되, parent_id에 원본 질문의 id를 매핑
+
+프론트엔드(Claude Code) 구현 : 코멘트 리스트를 불러올 때 where parent_id IS NULL인 것들만 카드(5*2)로 먼저 뿌려주고,
+카드를 클릭해 팝업이 뜨면 해당 id를 parent_id로 가진 답변 데이터가 있는지 다시 조회(Select)
+
+2)관리자 기능 (삭제 및 비공개 처리)
+데이터 실제 삭제(DELETE)보다는 Soft Delete 권한 부여 :  is_deleted = TRUE로 상태만 변경하고, 사용자 화면에서는 where is_deleted = FALSE 조건으로 필터링해 보여주지 않는 방식
+
+비공개 기능: is_private = TRUE인 카드는 사용자 화면에서 블러(Blur) 처리를 하거나 "관리자에 의해 비공개 처리된 글입니다"라는 안내 문구만 띄우도록 분기 처리
+
+3)이미지 파일 업로드 관련
+DB 테이블의 image_url 필드에는 이미지 파일 자체가 저장되는 것이 아니라, 이미지가 저장된 스토리지(e.g., AWS S3, Supabase Storage, 혹은 로컬 서버 폴더)의 주소 문자열이 저장
+'이미지 업로드 API -> 반환된 URL을 DB의 image_url에 저장'하는 2단계 프로세스로 기획
+
+6. 화면과 DB 테이블의 연결 구조
+1) 사용자 화면: [코멘트 입력창] 및 [카드 리스트(5*2)]
+사용자가 코멘트를 등록 : * 사용자가 푸터에서 텍스트와 이미지를 넣고 완료를 누르면, Comments 테이블에 새로운 행(Row)이 하나 생성
+이때 질문글이므로 parent_id는 빈칸(NULL)으로 저장
+
+화면에 카드 리스트를 불러올 때:
+DB에서 where parent_id IS NULL(답변이 아닌 원본 질문만)인 데이터를 최신순으로 10개(5*2) 가져와서 카드 형태로 화면에 띄우기
+image_url 값이 있으면 이미지+텍스트 카드로, 없으면 텍스트만 있는 카드로 분기 처리
+
+2)사용자/관리자 화면: 코멘트 클릭 시 뜨는 [상세 팝업창]
+팝업창을 열었을 때: 특정 코멘트 카드를 클릭하면, 그 카드의 고유 ID(id)를 가지고 팝업창이 열리도록
+이 팝업창 안에서는 두 가지 데이터를 Comments 테이블에서 조회하여 보여주기
+클릭한 원본 질문 내용: where id = 클릭한ID
+관리자가 달아놓은 답변 내용: where parent_id = 클릭한ID
+
+3. 관리자 화면: [답변 작성 기능]
+관리자가 팝업창에서 답장을 쓰고 완료를 누를 때:
+새로운 테이블을 만드는 것이 아니라, 똑같이 Comments 테이블에 새로운 행(Row)을 추가(Insert)
+단, 이때는 관리자가 쓴 글이므로 parent_id에 방금 클릭해서 들어온 원본 질문의 id 번호를 적어서 저장합니다.
+========================================================================================
