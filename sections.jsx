@@ -446,7 +446,6 @@ function CommentsSection() {
                   </div>
                 </>
               )}
-            </div>
           </div>
         ))}
       </div>
