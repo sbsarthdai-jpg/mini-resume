@@ -2,6 +2,26 @@
 const { useState, useEffect, useRef } = React;
 
 /* ============================================================
+   Supabase 콘텐츠 로더
+============================================================ */
+function useSiteContent() {
+  const [content, setContent] = useState({});
+  useEffect(() => {
+    const client = window.supabaseClient;
+    if (!client) return;
+    client.from('pagecontents').select('*').then(({ data }) => {
+      if (!data) return;
+      const map = {};
+      data.forEach(row => {
+        map[row.section_key] = row.content_type === 'image' ? row.image_url : row.content_value;
+      });
+      setContent(map);
+    });
+  }, []);
+  return content;
+}
+
+/* ============================================================
    PROFILE DATA
 ============================================================ */
 const PROFILE = {
@@ -43,39 +63,27 @@ function Hero({ displayName = 'MINI' }) {
   return (
     <section className="hero" data-screen-label="01 Hero">
       <div className="topbar">
-        <FadeIn delay={0} y={-12} duration={600}>
-          <span>Motion Graphic</span>
-        </FadeIn>
-        <FadeIn delay={120} y={-12} duration={600}>
-          <span className="center">Design Resume</span>
-        </FadeIn>
-        <FadeIn delay={240} y={-12} duration={600}>
-          <span className="date">2025.05.05</span>
-        </FadeIn>
+        <span>Motion Graphic</span>
+        <span className="center">Design Resume</span>
+        <span className="date">2025.05.05</span>
       </div>
 
       <div className="apple-img" style={{ left: '3%', top: '300px', width: 280, height: 280, transform: 'rotate(-15deg)' }} />
       <div className="apple-img" style={{ right: '-6%', top: '140px', width: 520, height: 520, transform: 'rotate(20deg) scaleX(-1)' }} />
 
-      <FadeIn delay={150} y={40}>
-        <h1 className="hero-title">Hi, I&apos;M {(displayName || 'MINI').toUpperCase()}!</h1>
-      </FadeIn>
+      <h1 className="hero-title">Hi, I&apos;M {(displayName || 'MINI').toUpperCase()}!</h1>
 
-      <FadeIn delay={600} y={30}>
-        <div className="hero-photo-wrap">
-          <Magnet strength={3} padding={140}>
-            <div className="hero-photo" aria-label="MINI portrait" />
-          </Magnet>
-        </div>
-      </FadeIn>
+      <div className="hero-photo-wrap">
+        <Magnet strength={3} padding={140}>
+          <div className="hero-photo" aria-label="MINI portrait" />
+        </Magnet>
+      </div>
 
       <div className="hero-foot">
-        <FadeIn delay={500} y={20}>
-          <a className="hero-cta" href="#contact">
-            Contact Me
-            <span style={{ fontSize: 16 }}>→</span>
-          </a>
-        </FadeIn>
+        <a className="hero-cta" href="#contact">
+          Contact Me
+          <span style={{ fontSize: 16 }}>→</span>
+        </a>
       </div>
     </section>
   );
@@ -85,76 +93,72 @@ function Hero({ displayName = 'MINI' }) {
    PROFILE SECTION
 ============================================================ */
 function ProfileSection() {
+  const content = useSiteContent();
+  const subtitle = content['subtitle'] || '통통 튀고 상큼한 아이디어 생성기';
+  const profileImg = content['profile_photo'];
   return (
     <section className="profile" data-screen-label="02 Profile">
       <FadeIn><h2>Profile</h2></FadeIn>
-      <FadeIn delay={100}>
-        <p className="subtitle">통통 튀고 상큼한 아이디어 생성기</p>
-      </FadeIn>
+      <p className="subtitle">{subtitle}</p>
 
       <div className="profile-grid">
         {/* Card 1: Photo */}
-        <FadeIn delay={150}>
-          <div className="profile-card">
-            <div className="card-label">Photo</div>
-            <h3>프로필 사진</h3>
-            <div className="photo-placeholder profile-img-slot">
-              <span className="ph-label">PORTRAIT</span>
-            </div>
+        <div className="profile-card">
+          <div className="card-label">Photo</div>
+          <h3>프로필 사진</h3>
+          <div
+            className="photo-placeholder profile-img-slot"
+            style={profileImg ? { backgroundImage: `url(${profileImg})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+          >
+            <span className="ph-label">PORTRAIT</span>
           </div>
-        </FadeIn>
+        </div>
 
         {/* Card 2: Basic info */}
-        <FadeIn delay={240}>
-          <div className="profile-card">
-            <div className="card-label">Basic Info</div>
-            <h3>기본 프로필</h3>
-            <div style={{ marginTop: 8 }}>
-              {PROFILE.basic.map((row, i) => (
-                <div className="info-row" key={i}>
-                  <span className="k">{row.k}</span>
-                  <span className="v">{row.v}</span>
-                </div>
-              ))}
-            </div>
+        <div className="profile-card">
+          <div className="card-label">Basic Info</div>
+          <h3>기본 프로필</h3>
+          <div style={{ marginTop: 8 }}>
+            {PROFILE.basic.map((row, i) => (
+              <div className="info-row" key={i}>
+                <span className="k">{row.k}</span>
+                <span className="v">{row.v}</span>
+              </div>
+            ))}
           </div>
-        </FadeIn>
+        </div>
 
         {/* Card 3: Awards + Career */}
-        <FadeIn delay={330}>
-          <div className="profile-card">
-            <div className="card-label">Awards & Career</div>
-            <h3>수상 · 경력</h3>
-            <div style={{ marginTop: 6, overflow: 'hidden' }}>
-              {[...PROFILE.awards.slice(0, 3), ...PROFILE.career.slice(0, 3)].map((row, i) => (
-                <div className="career-item" key={i}>
-                  <span className="yr">{row.yr}</span>
-                  <span className="body">
-                    <div className="t">{row.t}</div>
-                    <div className="s">{row.s}</div>
-                  </span>
-                </div>
-              ))}
-            </div>
+        <div className="profile-card">
+          <div className="card-label">Awards & Career</div>
+          <h3>수상 · 경력</h3>
+          <div style={{ marginTop: 6, overflow: 'hidden' }}>
+            {[...PROFILE.awards.slice(0, 3), ...PROFILE.career.slice(0, 3)].map((row, i) => (
+              <div className="career-item" key={i}>
+                <span className="yr">{row.yr}</span>
+                <span className="body">
+                  <div className="t">{row.t}</div>
+                  <div className="s">{row.s}</div>
+                </span>
+              </div>
+            ))}
           </div>
-        </FadeIn>
+        </div>
 
         {/* Card 4: Skills */}
-        <FadeIn delay={420}>
-          <div className="profile-card">
-            <div className="card-label">Skills</div>
-            <h3>주요 스킬</h3>
-            <div style={{ marginTop: 8 }}>
-              {PROFILE.skills.map((sk, i) => (
-                <div className="skill-row" key={i}>
-                  <span className="name">{sk.n}</span>
-                  <span className="bar"><span className="fill" style={{ width: `${sk.v}%` }} /></span>
-                  <span className="pct">{sk.v}</span>
-                </div>
-              ))}
-            </div>
+        <div className="profile-card">
+          <div className="card-label">Skills</div>
+          <h3>주요 스킬</h3>
+          <div style={{ marginTop: 8 }}>
+            {PROFILE.skills.map((sk, i) => (
+              <div className="skill-row" key={i}>
+                <span className="name">{sk.n}</span>
+                <span className="bar"><span className="fill" style={{ width: `${sk.v}%` }} /></span>
+                <span className="pct">{sk.v}</span>
+              </div>
+            ))}
           </div>
-        </FadeIn>
+        </div>
       </div>
     </section>
   );
@@ -199,14 +203,24 @@ const ABOUT_CARDS = [
 ];
 
 function AboutSection() {
+  const content = useSiteContent();
+  const cards = ABOUT_CARDS.map((card, i) => {
+    const n = String(i + 1).padStart(2, '0');
+    return {
+      ...card,
+      lead: content[`about_${n}_lead`] || card.lead,
+      body: content[`about_${n}_body`] || card.body,
+      img: content[`about_${n}_img`] || card.img,
+    };
+  });
   return (
     <section className="about-wrap" id="about" data-screen-label="03 About Me">
       <div className="about-head">
         <FadeIn><h2>About Me</h2></FadeIn>
       </div>
       <div className="about-stack">
-        {ABOUT_CARDS.map((card, i) => (
-          <StickyCard key={i} index={i} total={ABOUT_CARDS.length} offsetTop={90} gap={28}>
+        {cards.map((card, i) => (
+          <StickyCard key={i} index={i} total={cards.length} offsetTop={90} gap={28}>
             <div className="left">
               <div className="head">
                 <div className="num">{card.num}</div>
@@ -269,15 +283,22 @@ const QNA = [
 
 function QnASection() {
   const [open, setOpen] = useState(0);
+  const content = useSiteContent();
+  const items = QNA.map((item, i) => {
+    const n = String(i + 1).padStart(2, '0');
+    return {
+      q: content[`qna_${n}_q`] || item.q,
+      a: content[`qna_${n}_a`] || item.a,
+    };
+  });
   return (
     <section className="qna-wrap" id="qna" data-screen-label="04 QnA">
       <div className="qna-head">
         <FadeIn><h2>QnA</h2></FadeIn>
       </div>
       <div className="qna-list">
-        {QNA.map((item, i) => (
-          <FadeIn key={i} delay={i * 50} y={16} duration={500}>
-            <div className={`qna-item ${open === i ? 'open' : ''}`}>
+        {items.map((item, i) => (
+          <div key={i} className={`qna-item ${open === i ? 'open' : ''}`}>
               <button className="qna-q" onClick={() => setOpen(open === i ? -1 : i)}>
                 <span className="q-mark">Q.</span>
                 <span className="q-text">{item.q}</span>
@@ -297,7 +318,7 @@ function QnASection() {
                 </div>
               </div>
             </div>
-          </FadeIn>
+          </div>
         ))}
       </div>
     </section>
@@ -400,13 +421,10 @@ function CommentsSection() {
       <FadeIn>
         <h2 className="comments-title">Comments</h2>
       </FadeIn>
-      <FadeIn delay={100}>
-        <p className="comments-sub">이력서를 읽고 남겨주신 이야기들</p>
-      </FadeIn>
+      <p className="comments-sub">이력서를 읽고 남겨주신 이야기들</p>
       <div className="comments-grid">
-        {comments.map((c, i) => (
-          <FadeIn key={c.id} delay={i * 60}>
-            <div
+        {comments.map((c) => (
+          <div
               className={`comment-card${c.is_private ? ' private' : ''}`}
               onClick={() => !c.is_private && setSelected(c)}
               role="button"
@@ -430,7 +448,7 @@ function CommentsSection() {
                 </>
               )}
             </div>
-          </FadeIn>
+          </div>
         ))}
       </div>
       {selected && (
@@ -515,12 +533,9 @@ function ContactSection() {
     <section className="contact" id="contact" data-screen-label="07 Contact">
       <FadeIn><h2>Contact Me</h2></FadeIn>
 
-      <FadeIn delay={200}>
-        <p className="contact-desc">이력서를 읽고 느끼신 점, 질문, 면접 제의를 남겨주세요</p>
-      </FadeIn>
+      <p className="contact-desc">이력서를 읽고 느끼신 점, 질문, 면접 제의를 남겨주세요</p>
 
-      <FadeIn delay={300}>
-        <form className={`contact-form-wrap ${state}`} onSubmit={onSubmit}>
+      <form className={`contact-form-wrap ${state}`} onSubmit={onSubmit}>
           {/* Author name + image upload row */}
           <div className="contact-author-row">
             <input
@@ -578,16 +593,13 @@ function ContactSection() {
             </div>
           </div>
         </form>
-      </FadeIn>
 
-      <FadeIn delay={400}>
-        <div className="socials">
-          <a href="https://instagram.com" target="_blank" rel="noopener">Instagram</a>
-          <a href="https://behance.net" target="_blank" rel="noopener">Behance</a>
-          <a href="https://vimeo.com" target="_blank" rel="noopener">Vimeo</a>
-          <a href="mailto:mini@studio.com">mini@studio.com</a>
-        </div>
-      </FadeIn>
+      <div className="socials">
+        <a href="https://instagram.com" target="_blank" rel="noopener">Instagram</a>
+        <a href="https://behance.net" target="_blank" rel="noopener">Behance</a>
+        <a href="https://vimeo.com" target="_blank" rel="noopener">Vimeo</a>
+        <a href="mailto:mini@studio.com">mini@studio.com</a>
+      </div>
 
       <div className="contact-foot">
         <span>© 2025 MINI · MOTION GRAPHIC DESIGNER</span>

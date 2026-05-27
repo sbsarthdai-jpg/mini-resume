@@ -1,5 +1,5 @@
 /* global React, ReactDOM */
-const { useState, useEffect, useCallback } = React;
+const { useState, useEffect, useCallback, useRef } = React;
 
 // ============================================================
 // Supabase 헬퍼
@@ -74,6 +74,29 @@ async function updatePageContent(id, content_value) {
   const client = getClient();
   if (!client) return;
   await client.from('pagecontents').update({ content_value, updated_at: new Date().toISOString() }).eq('id', id);
+}
+
+async function upsertContent(page_name, section_key, content_type, value) {
+  const client = getClient();
+  if (!client) return;
+  const field = content_type === 'image' ? 'image_url' : 'content_value';
+  const existing = await client.from('pagecontents').select('id').eq('section_key', section_key);
+  if (existing.data && existing.data.length > 0) {
+    await client.from('pagecontents').update({ [field]: value, updated_at: new Date().toISOString() }).eq('section_key', section_key);
+  } else {
+    await client.from('pagecontents').insert({ page_name, section_key, content_type, [field]: value });
+  }
+}
+
+async function uploadImage(file) {
+  const client = getClient();
+  if (!client) return null;
+  const ext = file.name.split('.').pop().toLowerCase();
+  const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+  const { error } = await client.storage.from('comment-images').upload(filename, file, { upsert: false });
+  if (error) return null;
+  const { data } = client.storage.from('comment-images').getPublicUrl(filename);
+  return data.publicUrl;
 }
 
 // ============================================================
@@ -352,71 +375,228 @@ function CommentsTab() {
 // ============================================================
 // Content Tab
 // ============================================================
-function ContentTab() {
-  const [contents, setContents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [savingId, setSavingId] = useState(null);
-  const [savedId, setSavedId] = useState(null);
-  const [edits, setEdits] = useState({});
+// ============================================================
+// Profile Tab
+// ============================================================
+function ProfileTab() {
+  const [subtitle, setSubtitle] = useState('');
+  const [photoUrl, setPhotoUrl] = useState('');
+  const [saving, setSaving] = useState('');
+  const [saved, setSaved] = useState('');
+  const fileRef = useRef(null);
 
   useEffect(() => {
     fetchPageContents().then(data => {
-      setContents(data);
-      const init = {};
-      data.forEach(c => { init[c.id] = c.content_value || ''; });
-      setEdits(init);
-      setLoading(false);
+      data.forEach(row => {
+        if (row.section_key === 'subtitle') setSubtitle(row.content_value || '');
+        if (row.section_key === 'profile_photo') setPhotoUrl(row.image_url || '');
+      });
     });
   }, []);
 
-  const handleSave = async (item) => {
-    setSavingId(item.id);
-    await updatePageContent(item.id, edits[item.id]);
-    setSavingId(null);
-    setSavedId(item.id);
-    setTimeout(() => setSavedId(null), 2000);
+  const save = async (key) => {
+    setSaving(key);
+    if (key === 'subtitle') await upsertContent('profile', 'subtitle', 'text', subtitle);
+    setSaving('');
+    setSaved(key);
+    setTimeout(() => setSaved(''), 2000);
   };
 
-  const sectionLabels = {
-    display_name: '표시 이름 (Hero)',
-    full_name: '전체 이름',
-    role: '직함',
-    tagline: '서브 문구',
-    subtitle: 'Profile 부제목',
-    footer_text: '푸터 텍스트',
+  const onPhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setSaving('photo');
+    const url = await uploadImage(file);
+    if (url) {
+      setPhotoUrl(url);
+      await upsertContent('profile', 'profile_photo', 'image', url);
+      setSaved('photo');
+      setTimeout(() => setSaved(''), 2000);
+    }
+    setSaving('');
   };
 
-  if (loading) return <div className="loading-state">콘텐츠 로딩 중...</div>;
+  return (
+    <div className="content-editor-list">
+      <div className="content-editor-item">
+        <div className="key-label">Profile 부제목</div>
+        <input className="edit-input" type="text" value={subtitle} onChange={e => setSubtitle(e.target.value)} />
+        <button className={`btn-save${saved === 'subtitle' ? ' saved' : ''}`} onClick={() => save('subtitle')} disabled={saving === 'subtitle'}>
+          {saving === 'subtitle' ? '저장 중...' : saved === 'subtitle' ? '저장됨 ✓' : '저장'}
+        </button>
+      </div>
+      <div className="content-editor-item">
+        <div className="key-label">프로필 사진</div>
+        {photoUrl && <img src={photoUrl} alt="프로필" style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 12, marginBottom: 8 }} />}
+        <input type="file" accept="image/*" ref={fileRef} onChange={onPhotoUpload} style={{ display: 'none' }} />
+        <button className={`btn-save${saved === 'photo' ? ' saved' : ''}`} onClick={() => fileRef.current.click()} disabled={saving === 'photo'}>
+          {saving === 'photo' ? '업로드 중...' : saved === 'photo' ? '저장됨 ✓' : '사진 변경'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// About Me Tab
+// ============================================================
+const ABOUT_DEFAULTS = [
+  { num: '01', ko: '단단함' },
+  { num: '02', ko: '빠른 아이디어' },
+  { num: '03', ko: '친화력 & 밝음' },
+  { num: '04', ko: '꾸준함' },
+];
+
+function AboutTab() {
+  const [cards, setCards] = useState(ABOUT_DEFAULTS.map(() => ({ lead: '', body: '', imgUrl: '' })));
+  const [saving, setSaving] = useState(null);
+  const [saved, setSaved] = useState(null);
+  const fileRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
+
+  useEffect(() => {
+    fetchPageContents().then(data => {
+      setCards(prev => prev.map((c, i) => {
+        const n = String(i + 1).padStart(2, '0');
+        const lead = data.find(r => r.section_key === `about_${n}_lead`);
+        const body = data.find(r => r.section_key === `about_${n}_body`);
+        const img = data.find(r => r.section_key === `about_${n}_img`);
+        return {
+          lead: lead ? lead.content_value || '' : c.lead,
+          body: body ? body.content_value || '' : c.body,
+          imgUrl: img ? img.image_url || '' : c.imgUrl,
+        };
+      }));
+    });
+  }, []);
+
+  const saveText = async (i, field) => {
+    const key = `${i}_${field}`;
+    setSaving(key);
+    const n = String(i + 1).padStart(2, '0');
+    await upsertContent('about', `about_${n}_${field}`, 'text', cards[i][field]);
+    setSaving(null);
+    setSaved(key);
+    setTimeout(() => setSaved(null), 2000);
+  };
+
+  const onImgUpload = async (i, e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setSaving(`${i}_img`);
+    const url = await uploadImage(file);
+    if (url) {
+      const n = String(i + 1).padStart(2, '0');
+      setCards(prev => prev.map((c, idx) => idx === i ? { ...c, imgUrl: url } : c));
+      await upsertContent('about', `about_${n}_img`, 'image', url);
+      setSaved(`${i}_img`);
+      setTimeout(() => setSaved(null), 2000);
+    }
+    setSaving(null);
+  };
 
   return (
     <div>
-      <p style={{ color: '#8B8378', marginBottom: 32, fontSize: 14 }}>
-        각 섹션의 텍스트를 수정하고 저장 버튼을 누르세요.<br />
-        변경 사항은 즉시 Supabase에 저장되며, 페이지 새로고침 시 반영됩니다.
-      </p>
-      <div className="content-editor-list">
-        {contents.filter(c => c.content_type === 'text').map(item => (
-          <div key={item.id} className="content-editor-item">
-            <div className="key-label">
-              {sectionLabels[item.section_key] || item.section_key}
-              <span style={{ marginLeft: 10, opacity: 0.6 }}>({item.page_name})</span>
-            </div>
-            <input
-              className="edit-input"
-              type="text"
-              value={edits[item.id] || ''}
-              onChange={e => setEdits(prev => ({ ...prev, [item.id]: e.target.value }))}
-            />
-            <button
-              className={`btn-save${savedId === item.id ? ' saved' : ''}`}
-              onClick={() => handleSave(item)}
-              disabled={savingId === item.id}
-            >
-              {savingId === item.id ? '저장 중...' : savedId === item.id ? '저장됨 ✓' : '저장'}
-            </button>
+      {ABOUT_DEFAULTS.map((def, i) => (
+        <div key={i} style={{ marginBottom: 40, paddingBottom: 32, borderBottom: '1px dashed #ddd' }}>
+          <div style={{ fontWeight: 700, fontSize: 16, color: '#BB1616', marginBottom: 16 }}>
+            {def.num} · {def.ko}
           </div>
-        ))}
-      </div>
+          <div className="content-editor-list">
+            <div className="content-editor-item">
+              <div className="key-label">한 줄 소개 (lead)</div>
+              <input className="edit-input" type="text" value={cards[i].lead}
+                onChange={e => setCards(prev => prev.map((c, idx) => idx === i ? { ...c, lead: e.target.value } : c))} />
+              <button className={`btn-save${saved === `${i}_lead` ? ' saved' : ''}`}
+                onClick={() => saveText(i, 'lead')} disabled={saving === `${i}_lead`}>
+                {saving === `${i}_lead` ? '저장 중...' : saved === `${i}_lead` ? '저장됨 ✓' : '저장'}
+              </button>
+            </div>
+            <div className="content-editor-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+              <div className="key-label">본문 (body)</div>
+              <textarea className="edit-input" rows={3} value={cards[i].body}
+                style={{ resize: 'vertical', padding: '10px 14px', borderRadius: 8, border: '1px solid #ddd', width: '100%' }}
+                onChange={e => setCards(prev => prev.map((c, idx) => idx === i ? { ...c, body: e.target.value } : c))} />
+              <button className={`btn-save${saved === `${i}_body` ? ' saved' : ''}`}
+                onClick={() => saveText(i, 'body')} disabled={saving === `${i}_body`}>
+                {saving === `${i}_body` ? '저장 중...' : saved === `${i}_body` ? '저장됨 ✓' : '저장'}
+              </button>
+            </div>
+            <div className="content-editor-item">
+              <div className="key-label">이미지</div>
+              {cards[i].imgUrl && <img src={cards[i].imgUrl} alt={def.ko} style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8, marginRight: 12 }} />}
+              <input type="file" accept="image/*" ref={fileRefs[i]} onChange={e => onImgUpload(i, e)} style={{ display: 'none' }} />
+              <button className={`btn-save${saved === `${i}_img` ? ' saved' : ''}`}
+                onClick={() => fileRefs[i].current.click()} disabled={saving === `${i}_img`}>
+                {saving === `${i}_img` ? '업로드 중...' : saved === `${i}_img` ? '저장됨 ✓' : '이미지 변경'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ============================================================
+// QnA Tab
+// ============================================================
+function QnATab() {
+  const [items, setItems] = useState(Array.from({ length: 6 }, () => ({ q: '', a: '' })));
+  const [saving, setSaving] = useState(null);
+  const [saved, setSaved] = useState(null);
+
+  useEffect(() => {
+    fetchPageContents().then(data => {
+      setItems(prev => prev.map((item, i) => {
+        const n = String(i + 1).padStart(2, '0');
+        const q = data.find(r => r.section_key === `qna_${n}_q`);
+        const a = data.find(r => r.section_key === `qna_${n}_a`);
+        return {
+          q: q ? q.content_value || '' : item.q,
+          a: a ? a.content_value || '' : item.a,
+        };
+      }));
+    });
+  }, []);
+
+  const saveField = async (i, field) => {
+    const key = `${i}_${field}`;
+    setSaving(key);
+    const n = String(i + 1).padStart(2, '0');
+    await upsertContent('qna', `qna_${n}_${field}`, 'text', items[i][field]);
+    setSaving(null);
+    setSaved(key);
+    setTimeout(() => setSaved(null), 2000);
+  };
+
+  return (
+    <div>
+      {items.map((item, i) => (
+        <div key={i} style={{ marginBottom: 36, paddingBottom: 28, borderBottom: '1px dashed #ddd' }}>
+          <div style={{ fontWeight: 700, fontSize: 15, color: '#BB1616', marginBottom: 12 }}>Q{i + 1}</div>
+          <div className="content-editor-list">
+            <div className="content-editor-item">
+              <div className="key-label">질문</div>
+              <input className="edit-input" type="text" value={item.q}
+                onChange={e => setItems(prev => prev.map((it, idx) => idx === i ? { ...it, q: e.target.value } : it))} />
+              <button className={`btn-save${saved === `${i}_q` ? ' saved' : ''}`}
+                onClick={() => saveField(i, 'q')} disabled={saving === `${i}_q`}>
+                {saving === `${i}_q` ? '저장 중...' : saved === `${i}_q` ? '저장됨 ✓' : '저장'}
+              </button>
+            </div>
+            <div className="content-editor-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+              <div className="key-label">답변</div>
+              <textarea className="edit-input" rows={3} value={item.a}
+                style={{ resize: 'vertical', padding: '10px 14px', borderRadius: 8, border: '1px solid #ddd', width: '100%' }}
+                onChange={e => setItems(prev => prev.map((it, idx) => idx === i ? { ...it, a: e.target.value } : it))} />
+              <button className={`btn-save${saved === `${i}_a` ? ' saved' : ''}`}
+                onClick={() => saveField(i, 'a')} disabled={saving === `${i}_a`}>
+                {saving === `${i}_a` ? '저장 중...' : saved === `${i}_a` ? '저장됨 ✓' : '저장'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -449,18 +629,16 @@ function AdminDashboard({ onLogout }) {
       </header>
 
       <nav className="admin-tabs">
-        <button
-          className={`tab-btn ${tab === 'comments' ? 'active' : ''}`}
-          onClick={() => setTab('comments')}
-        >
-          코멘트 관리
-        </button>
-        <button
-          className={`tab-btn ${tab === 'content' ? 'active' : ''}`}
-          onClick={() => setTab('content')}
-        >
-          콘텐츠 수정
-        </button>
+        {[
+          { key: 'comments', label: '코멘트 관리' },
+          { key: 'profile', label: '프로필' },
+          { key: 'about', label: 'About Me' },
+          { key: 'qna', label: 'QnA' },
+        ].map(({ key, label }) => (
+          <button key={key} className={`tab-btn ${tab === key ? 'active' : ''}`} onClick={() => setTab(key)}>
+            {label}
+          </button>
+        ))}
       </nav>
 
       <main className="admin-main">
@@ -472,9 +650,12 @@ function AdminDashboard({ onLogout }) {
         </div>
 
         <h2 className="section-heading">
-          {tab === 'comments' ? '코멘트 관리' : '콘텐츠 수정'}
+          {{ comments: '코멘트 관리', profile: '프로필 수정', about: 'About Me 수정', qna: 'QnA 수정' }[tab]}
         </h2>
-        {tab === 'comments' ? <CommentsTab /> : <ContentTab />}
+        {tab === 'comments' && <CommentsTab />}
+        {tab === 'profile' && <ProfileTab />}
+        {tab === 'about' && <AboutTab />}
+        {tab === 'qna' && <QnATab />}
       </main>
     </div>
   );

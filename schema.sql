@@ -103,5 +103,34 @@ insert into public.pagecontents (page_name, section_key, content_type, content_v
   ('hero', 'role', 'text', 'Motion Graphic Designer'),
   ('hero', 'tagline', 'text', '통통 튀는 모션과 5년의 손맛으로 이야기를 움직이게 합니다.'),
   ('profile', 'subtitle', 'text', '통통 튀고 상큼한 아이디어 생성기'),
-  ('contact', 'footer_text', 'text', '© 2025 MINI · MOTION GRAPHIC DESIGNER')
+  ('contact', 'footer_text', 'text', '© 2025 MINI · MOTION GRAPHIC DESIGNER'),
+  ('about', 'about_01_lead', 'text', '"마감 앞에서 흔들리지 않아요."'),
+  ('about', 'about_01_body', 'text', '5년간 한 번도 마감을 놓친 적이 없어요. 풀리지 않는 컷이 생기면 새벽 두 시까지 붙들고 있는 편입니다.'),
+  ('about', 'about_02_lead', 'text', '"노션엔 이미 60장의 레퍼런스."'),
+  ('about', 'about_02_body', 'text', '클라이언트가 "이건 좀 다른 방향이…" 라고 운을 떼면, 다음 카드는 이미 준비되어 있습니다.'),
+  ('about', 'about_03_lead', 'text', '"현장에서 가장 먼저 말 걸어요."'),
+  ('about', 'about_03_body', 'text', '처음 보는 클라이언트와도 30분이면 농담을 주고받는 편입니다.'),
+  ('about', 'about_04_lead', 'text', '"매일 1컷씩 5년째 만들어요."'),
+  ('about', 'about_04_body', 'text', '인스타그램에 매일 1컷의 모션 작업을 올린 지 1,827일째.'),
+  ('qna', 'qna_01_q', 'text', '어떤 작업을 가장 좋아하나요?'),
+  ('qna', 'qna_01_a', 'text', '처음 시작할 때 아무것도 정해지지 않은 프로젝트요.'),
+  ('qna', 'qna_02_q', 'text', '가장 기억에 남는 프로젝트는?'),
+  ('qna', 'qna_02_a', 'text', 'tvN 드라마 <불 켜진 방> 오프닝 시퀀스.'),
+  ('qna', 'qna_03_q', 'text', '작업할 때 가장 중요하게 생각하는 것은?'),
+  ('qna', 'qna_03_a', 'text', '"이게 왜 움직여야 하는가."'),
+  ('qna', 'qna_04_q', 'text', '함께 일하기 좋은 클라이언트 유형은?'),
+  ('qna', 'qna_04_a', 'text', '"그냥 멋있게 해주세요" 보다 고민을 같이 나눠주시는 분.'),
+  ('qna', 'qna_05_q', 'text', '5년 뒤 어떤 디자이너가 되어 있을까요?'),
+  ('qna', 'qna_05_a', 'text', '지금처럼 매일 1컷씩은 만들고 있을 거예요.'),
+  ('qna', 'qna_06_q', 'text', '취미는 무엇인가요?'),
+  ('qna', 'qna_06_a', 'text', '필름카메라로 찍는 일요일 산책, 그리고 새벽에 베이킹.')
+on conflict (section_key) do nothing;
+
+-- profile_photo (이미지, 초기값 없음)
+insert into public.pagecontents (page_name, section_key, content_type, image_url) values
+  ('profile', 'profile_photo', 'image', null),
+  ('about', 'about_01_img', 'image', null),
+  ('about', 'about_02_img', 'image', null),
+  ('about', 'about_03_img', 'image', null),
+  ('about', 'about_04_img', 'image', null)
 on conflict (section_key) do nothing;

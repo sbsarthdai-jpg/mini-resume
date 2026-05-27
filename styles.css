@@ -60,7 +60,7 @@ a { color: inherit; text-decoration: none; }
 /* ---------- Hero ---------- */
 .hero {
   position: relative;
-  padding: 0 40px 120px;
+  padding: 0 64px 120px;
   min-height: 1100px;
   overflow: hidden;
 }
@@ -68,7 +68,7 @@ a { color: inherit; text-decoration: none; }
   font-family: var(--font-display);
   font-weight: 400;
   color: var(--red);
-  font-size: clamp(180px, 16.5vw, 312px);
+  font-size: clamp(180px, 19vw, 360px);
   line-height: 0.92;
   letter-spacing: -0.02em;
   text-align: center;
@@ -874,9 +874,10 @@ section { position: relative; }
 
 .socials {
   display: flex;
-  gap: 16px;
-  justify-content: center;
-  margin-top: 44px;
+  gap: 24px;
+  justify-content: space-between;
+  max-width: 720px;
+  margin: 44px auto 0;
   position: relative;
   z-index: 2;
 }
@@ -1204,8 +1205,9 @@ section { position: relative; }
   max-height: 85vh;
   overflow-y: auto;
   position: relative;
-  scrollbar-width: thin;
+  scrollbar-width: none;
 }
+.modal-box::-webkit-scrollbar { display: none; }
 
 .modal-close {
   position: absolute;
