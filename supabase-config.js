@@ -2,8 +2,8 @@
 // Supabase 설정 — CDN 불필요, 직접 REST API 방식
 // supabase.com > Settings > API 에서 아래 두 값을 복사하세요
 // ============================================================
-window.SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
-window.SUPABASE_ANON_KEY = 'YOUR_ANON_PUBLIC_KEY';
+window.SUPABASE_URL = 'https://uprmcniecwjzxerwufzr.supabase.co';
+window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwcm1jbmllY3dqenhlcnd1ZnpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3ODQ2OTAsImV4cCI6MjA5NTM2MDY5MH0.Z2Y_ZzOTufCLoZOBWf5nmBTgzN99QaOXaYhUhvPmuXo';
 
 (function () {
   const configured = window.SUPABASE_URL && !window.SUPABASE_URL.includes('YOUR_PROJECT');

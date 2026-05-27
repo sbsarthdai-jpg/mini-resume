@@ -36,6 +36,18 @@ create table if not exists public.pagecontents (
 alter table public.comments enable row level security;
 alter table public.pagecontents enable row level security;
 
+-- 기존 정책 삭제 (재실행 시 중복 오류 방지)
+drop policy if exists "Public read comments" on public.comments;
+drop policy if exists "Public insert comments" on public.comments;
+drop policy if exists "Auth read all comments" on public.comments;
+drop policy if exists "Auth update comments" on public.comments;
+drop policy if exists "Auth delete comments" on public.comments;
+drop policy if exists "Auth insert reply" on public.comments;
+drop policy if exists "Public read pagecontents" on public.pagecontents;
+drop policy if exists "Auth manage pagecontents" on public.pagecontents;
+drop policy if exists "Public upload comment images" on storage.objects;
+drop policy if exists "Public read comment images" on storage.objects;
+
 -- comments: 누구나 비삭제·비공개 댓글 조회 가능
 create policy "Public read comments" on public.comments
   for select using (is_deleted = false and is_private = false);
